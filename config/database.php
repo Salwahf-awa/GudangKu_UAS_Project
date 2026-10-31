@@ -61,7 +61,7 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_merge(
                 array_filter([PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA')]),
-                env('DB_SSL', false) ? [PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false] : []
+                env('DB_SSL', false) ? [PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, PDO::MYSQL_ATTR_INIT_COMMAND => 'SET autocommit=1'] : []
     ) : [],
         ],
 
