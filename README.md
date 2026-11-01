@@ -4,6 +4,10 @@ Aplikasi web full-stack berbasis Laravel (arsitektur MVC) + MySQL untuk mengelol
 kategori, supplier, serta transaksi barang masuk/keluar, dengan autentikasi dan kontrol akses
 berbasis role (admin / staff). UAS Web Application Development - Universitas Cakrawala.
 
+**Pembuat:** Salwa Hasna Fadhila (NIM 25110300002)
+**Aplikasi live:** https://gudangku-uas-project.wasmer.app
+**Repository:** https://github.com/Salwahf-awa/GudangKu_UAS_Project
+
 ## Fitur
 - Registrasi, login, logout (session), rate limit login
 - RBAC: `admin` (akses penuh) dan `staff` (terbatas)
@@ -19,7 +23,7 @@ Tidak membutuhkan Node/npm (CSS ditulis langsung di layout).
 ## Instalasi lokal (dari repository ini)
 ```bash
 # 1. Clone repository
-git clone <URL-REPOSITORY-ANDA> gudangku
+git clone https://github.com/Salwahf-awa/GudangKu_UAS_Project.git gudangku
 cd gudangku
 
 # 2. Pasang dependensi PHP
@@ -44,7 +48,7 @@ Buka http://localhost:8000
 Alternatif tanpa migrasi: impor berkas `database.sql` ke database `gudangku`
 (skema + data dummy sudah ada di dalamnya).
 
-## Akun demo (dari seeder)
+## Akun demo (dari seeder; berlaku di lokal dan di aplikasi live)
 | Role  | Email                | Password    |
 |-------|----------------------|-------------|
 | admin | admin@gudangku.test  | password123 |
@@ -70,6 +74,8 @@ php artisan test
 app/Models/                 Model Eloquent (User, Category, Supplier, Product, StockTransaction)
 app/Http/Controllers/       Controller (Auth, Dashboard, Category, Supplier, Product, StockTransaction, User)
 app/Http/Middleware/        RoleMiddleware (RBAC), SanitizeInput (anti-XSS)
+app/Providers/              AppServiceProvider (SET autocommit=1 khusus production)
+config/database.php         Koneksi MySQL (membaca DB_NAME dan opsi TLS untuk hosting)
 resources/views/            View Blade (layouts, auth, products, ...)
 routes/web.php              Definisi routing
 database/migrations/        Skema database
@@ -77,14 +83,19 @@ database/seeders/           Data dummy
 bootstrap/app.php           Registrasi middleware
 ```
 
-## Deployment (Railway) - ringkas
-1. Push proyek ke GitHub.
-2. Railway -> New Project -> Deploy from GitHub repo, lalu tambahkan service MySQL.
-3. Variables pada service aplikasi: `APP_KEY` (hasil `php artisan key:generate --show`), `APP_ENV=production`,
-   `APP_DEBUG=false`, `APP_URL=https://<domain-railway>`, `DB_CONNECTION=mysql`,
-   `DB_URL=${{MySQL.MYSQL_URL}}`, `SESSION_DRIVER=database`.
-4. Jalankan `php artisan migrate --force` (pre-deploy / start command), lalu sekali `php artisan db:seed --force`.
-5. Generate domain publik di tab Settings -> Networking.
+## Deployment (Wasmer Edge) - ringkas
+1. Push proyek ke GitHub (`.env` dan `.env.production` masuk `.gitignore`; hanya `.env.example` yang di-commit).
+2. Wasmer Edge -> login dengan GitHub -> install GitHub App -> Import Git Repository -> pilih repository ini (branch `main`).
+3. Pada "Configure your app": pilih framework Laravel dan tambahkan database MySQL terkelola.
+   Wasmer menyuntikkan `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`.
+4. Environment Variables: `APP_KEY` (hasil `php artisan key:generate --show`), `APP_ENV=production`,
+   `APP_DEBUG=false`, `CACHE_STORE=file`, `SESSION_DRIVER=database`. Tulis nilai tanpa spasi di depan/belakang.
+5. Dari komputer lokal, jalankan migrasi dan seeder ke database hosting (memakai file `.env.production` yang
+   tidak di-commit): `php artisan migrate --force --env=production` lalu `php artisan db:seed --force --env=production`.
+6. Setiap `git push` ke `main` otomatis men-deploy ulang. Buka URL aplikasi dan uji login admin dan staff.
+
+Catatan: koneksi database di hosting ini berjalan dengan `autocommit` mati, sehingga data tidak tersimpan.
+Karena itu `AppServiceProvider` menjalankan `SET autocommit=1` khusus saat `APP_ENV=production`.
 
 Catatan: berkas `database.sql` diekspor dari MySQL setelah `php artisan migrate:fresh --seed`
 (`mysqldump -u root -p gudangku > database.sql`).
